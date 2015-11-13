@@ -1,10 +1,12 @@
 package com.zdrigotti.raspberrypinotificationlamp;
 
+import android.content.Intent;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 public class NotificationReceiver extends NotificationListenerService {
 
@@ -44,6 +46,8 @@ public class NotificationReceiver extends NotificationListenerService {
                 notifications.add(new CustomNotification(activeNotifications[i]));
             }
         }
+
+        //Red, Green, Blue, Yellow, Cyan, Magenta, White
 
         //Loop through the notifications looking for those we care about
         for (int i = 0; i < notifications.size(); i++) {
