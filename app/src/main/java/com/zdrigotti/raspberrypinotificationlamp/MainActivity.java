@@ -2,7 +2,7 @@ package com.zdrigotti.raspberrypinotificationlamp;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
@@ -10,7 +10,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
 import java.io.BufferedReader;
@@ -27,8 +27,8 @@ public class MainActivity extends ActionBarActivity {
     static final int PICK_NEW_APP = 1;
     private NotificationReceiver nReceiver;
     public static Context context;
-    private List<AppColorMap> appColorMaps = null;
     private AppColorAdapter listAdapter = null;
+    private ListView listView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,20 +39,18 @@ public class MainActivity extends ActionBarActivity {
 
         setTitle(R.string.menu_title);
 
-        appColorMaps = readFromFile();
-        listAdapter = new AppColorAdapter(MainActivity.this, R.layout.app_color_map_row, appColorMaps);
-        ListView listView = (ListView)findViewById(R.id.app_color_list);
-        listView.setAdapter(listAdapter);
+        listAdapter = new AppColorAdapter(MainActivity.this, R.layout.app_color_map_row, readFromFile());
+        listView = (ListView)findViewById(R.id.app_color_list);
 
-        /*Button appsButton = (Button) findViewById(R.id.appsButton);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
-        appsButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(context, AllAppsActivity.class);
-                startActivityForResult(intent, PICK_NEW_APP);
+            public void onItemClick(AdapterView<?> parent, View view, int position,long arg3) {
+                view.setSelected(true);
             }
-        });*/
+        });
+
+        listView.setAdapter(listAdapter);
     }
 
     @Override
@@ -76,12 +74,24 @@ public class MainActivity extends ActionBarActivity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, final Intent data) {
         if (requestCode == PICK_NEW_APP) {
             // Make sure the request was successful
             if (resultCode == RESULT_OK) {
                 Log.i("MainActivity", data.getStringExtra(Constants.PACKAGE_NAME));
-                appendToFile(data.getStringExtra(Constants.PACKAGE_NAME) + ",0000FF");
+                //appendToFile(data.getStringExtra(Constants.PACKAGE_NAME) + ",0000FF");
+                ColorPickerDialog colorPickerDialog = new ColorPickerDialog(this, 0, new ColorPickerDialog.OnColorSelectedListener() {
+
+                    @Override
+                    public void onColorSelected(int color) {
+                        Log.i("MainActivity", "Red: " + Color.red(color) + " Green: " + Color.green(color) + " Blue: " + Color.blue(color));
+                        //Log.i("MainActivity", "Color picked: " + );
+                        //appendToFile(data.getStringExtra(Constants.PACKAGE_NAME) + "," + Integer.toHexString(color).substring(2));
+                        appendToFile(data.getStringExtra(Constants.PACKAGE_NAME) + "," + color);
+                    }
+
+                });
+                colorPickerDialog.show();
             }
         }
     }
@@ -119,6 +129,8 @@ public class MainActivity extends ActionBarActivity {
         catch (IOException e) {
             Log.e("Exception", "File write failed: " + e.toString());
         }
+
+        listAdapter.swapItems(readFromFile());
     }
 
     private List<AppColorMap> readFromFile() {
@@ -133,9 +145,8 @@ public class MainActivity extends ActionBarActivity {
                 String receiveString = "";
 
                 while ((receiveString = bufferedReader.readLine()) != null) {
-                    Log.i("MainActivity", receiveString);
                     String[] fields = receiveString.split(",");
-                    appColorMap.add(new AppColorMap(fields[0], fields[1]));
+                    appColorMap.add(new AppColorMap(fields[0], Integer.parseInt(fields[1])));
                 }
 
                 inputStream.close();

@@ -3,9 +3,9 @@ package com.zdrigotti.raspberrypinotificationlamp;
 public class AppColorMap {
 
     private String packageName;
-    private String hexColor;
+    private int hexColor;
 
-    public AppColorMap(String packageName, String hexColor) {
+    public AppColorMap(String packageName, int hexColor) {
         this.packageName = packageName;
         this.hexColor = hexColor;
     }
@@ -18,11 +18,11 @@ public class AppColorMap {
         this.packageName = packageName;
     }
 
-    public String getHexColor() {
+    public int getHexColor() {
         return hexColor;
     }
 
-    public void setHexColor(String hexColor) {
+    public void setHexColor(int hexColor) {
         this.hexColor = hexColor;
     }
 }

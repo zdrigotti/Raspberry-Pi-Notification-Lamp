@@ -35,6 +35,11 @@ public class AppColorAdapter extends ArrayAdapter<AppColorMap> {
         return ((null != appsList) ? appsList.get(position) : null);
     }
 
+    public void swapItems(List<AppColorMap> appsList) {
+        this.appsList = appsList;
+        notifyDataSetChanged();
+    }
+
     @Override
     public long getItemId(int position) {
         return position;
@@ -59,7 +64,7 @@ public class AppColorAdapter extends ArrayAdapter<AppColorMap> {
                 ImageView iconView = (ImageView) view.findViewById(R.id.app_icon);
 
                 appName.setText(packageManager.getApplicationLabel(app).toString());
-                hexColor.setText("#" + appColorMap.getHexColor());
+                hexColor.setText("#" + Integer.toHexString(appColorMap.getHexColor()).substring(2));
                 iconView.setImageDrawable(packageManager.getApplicationIcon(app));
             }
             catch (PackageManager.NameNotFoundException e) {
