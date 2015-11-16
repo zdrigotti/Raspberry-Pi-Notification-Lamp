@@ -1,22 +1,27 @@
 package com.zdrigotti.raspberrypinotificationlamp;
 
-import android.content.Intent;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class NotificationReceiver extends NotificationListenerService {
 
-    private static String TAG = "NotificationReceiver";
-    private ArrayList<CustomNotification> notifications;
+    private static final String TAG = "NotificationReceiver";
+    private List<AppColorMap> selectedMaps;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        notifications = new ArrayList<CustomNotification>();
+        Log.i(TAG, "onCreate");
+        selectedMaps = readFromFile();
     }
 
     @Override
@@ -26,12 +31,24 @@ public class NotificationReceiver extends NotificationListenerService {
 
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
-        Log.i(TAG, "onNotificationPosted Package: " +  sbn.getPackageName() + " Time: " + sbn.getPostTime());
+        Log.i(TAG, "onNotificationPosted Package: " + sbn.getPackageName() + " Time: " + sbn.getPostTime());
 
         //Reset the list of notifications
         StatusBarNotification[] activeNotifications = getActiveNotifications();
 
-        //Iterate over all notifications
+        String found = "";
+
+        for (StatusBarNotification notification : activeNotifications) {
+            for (AppColorMap appColorMap : selectedMaps) {
+                if (notification.getPackageName().equals(appColorMap.getPackageName())) {
+                    found += appColorMap.getPackageName() + "," + appColorMap.getHexColor() + "\n";
+                }
+            }
+        }
+
+        Log.i(TAG, "Found: " + found);
+
+        /*//Iterate over all notifications
         for (int i = 0; i < activeNotifications.length; i++) {
             boolean found = false;
             //Iterate over stored notifications
@@ -46,8 +63,6 @@ public class NotificationReceiver extends NotificationListenerService {
                 notifications.add(new CustomNotification(activeNotifications[i]));
             }
         }
-
-        //Red, Green, Blue, Yellow, Cyan, Magenta, White
 
         //Loop through the notifications looking for those we care about
         for (int i = 0; i < notifications.size(); i++) {
@@ -88,12 +103,12 @@ public class NotificationReceiver extends NotificationListenerService {
                     notifications.get(i).setSent(true);
                 }
             }
-        }
+        }*/
     }
 
     @Override
     public void onNotificationRemoved(StatusBarNotification sbn) {
-        Log.i(TAG,"onNotificationRemoved Package: " + sbn.getPackageName() + " Time: " + sbn.getPostTime());
+      /*  Log.i(TAG,"onNotificationRemoved Package: " + sbn.getPackageName() + " Time: " + sbn.getPostTime());
 
         //Check if the notification we removed matches the ones we care about, if so, tell the Pi to remove it
         boolean removed = false;
@@ -127,6 +142,39 @@ public class NotificationReceiver extends NotificationListenerService {
             }
             //Get rid of the null object
             notifications.removeAll(Collections.singleton(null));
+        }*/
+    }
+
+    public void updateList(List<AppColorMap> appColorMaps) {
+        selectedMaps = appColorMaps;
+    }
+
+    private List<AppColorMap> readFromFile() {
+        List<AppColorMap> appColorMap = new ArrayList<>();
+
+        try {
+            InputStream inputStream = openFileInput(Constants.APP_MAP_FILE);
+
+            if (inputStream != null) {
+                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                String receiveString = "";
+
+                while ((receiveString = bufferedReader.readLine()) != null) {
+                    String[] fields = receiveString.split(",");
+                    appColorMap.add(new AppColorMap(fields[0], Integer.parseInt(fields[1])));
+                }
+
+                inputStream.close();
+            }
         }
+        catch (FileNotFoundException e) {
+            Log.e("login activity", "File not found: " + e.toString());
+        }
+        catch (IOException e) {
+            Log.e("login activity", "Can not read file: " + e.toString());
+        }
+
+        return appColorMap;
     }
 }
