@@ -14,4 +14,7 @@ public class Constants {
 
     public static String PACKAGE_NAME = "packageName";
     public static String APP_MAP_FILE = "appMap.txt";
+
+    public static String SERVER_IP = "serverIP";
+    public static String SHARED_PREFERENCES = "sharedPreferences";
 }

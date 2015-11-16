@@ -4,13 +4,16 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ListView;
 
 import java.io.BufferedReader;
@@ -33,17 +36,16 @@ public class MainActivity extends ActionBarActivity {
     private View selectedListItem;
     private int selectedIndex;
     private Menu menu;
+    private SharedPreferences settings;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        //nReceiver = new NotificationReceiver();
-
-        Intent intent = new Intent(this, NotificationReceiver.class);
-        startService(intent);
+        nReceiver = new NotificationReceiver();
 
         context = this;
+        settings = getSharedPreferences(Constants.SHARED_PREFERENCES, MODE_PRIVATE);
 
         setTitle(R.string.menu_title);
 
@@ -55,9 +57,10 @@ public class MainActivity extends ActionBarActivity {
 
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                if(selectedListItem != null){
+                if (selectedListItem != null) {
                     selectedListItem.setBackgroundResource(R.color.list_background);
                     showOption(R.id.add);
+                    showOption(R.id.connection);
                     hideOption(R.id.delete);
                     hideOption(R.id.changeColor);
                 }
@@ -67,11 +70,13 @@ public class MainActivity extends ActionBarActivity {
                     selectedListItem = view;
                     selectedIndex = position;
                     hideOption(R.id.add);
+                    hideOption(R.id.connection);
                     showOption(R.id.delete);
                     showOption(R.id.changeColor);
                 }
                 else {
                     showOption(R.id.add);
+                    showOption(R.id.connection);
                     hideOption(R.id.delete);
                     hideOption(R.id.changeColor);
                 }
@@ -79,6 +84,10 @@ public class MainActivity extends ActionBarActivity {
         });
 
         listView.setAdapter(listAdapter);
+
+        SharedPreferences settings = getSharedPreferences(Constants.SHARED_PREFERENCES, MODE_PRIVATE);
+
+        //String serverIP = settings.getString(Constants.SERVER_IP, "");
     }
 
     @Override
@@ -102,11 +111,49 @@ public class MainActivity extends ActionBarActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
         switch (item.getItemId()) {
-            case R.id.add:
+            case R.id.connection: {
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                LayoutInflater inflater = MainActivity.this.getLayoutInflater();
+                final View dialogView = inflater.inflate(R.layout.set_server_ip_dialog, null);
+
+                builder.setTitle("Set Server IP");
+                EditText serverIPEditText = (EditText) dialogView.findViewById(R.id.serverIP);
+
+                String currentIP = settings.getString(Constants.SERVER_IP, "");
+
+                if (!currentIP.equals("")) {
+                    serverIPEditText.setText(currentIP);
+                }
+
+                builder.setView(dialogView)
+                        // Add action buttons
+                        .setPositiveButton("Submit", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                EditText serverIPEditText = (EditText) dialogView.findViewById(R.id.serverIP);
+
+                                SharedPreferences.Editor editor = settings.edit();
+                                editor.putString(Constants.SERVER_IP, serverIPEditText.getText().toString());
+                                editor.commit();
+
+                                dialog.dismiss();
+                            }
+                        })
+                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                dialog.dismiss();
+                            }
+                        });
+
+                builder.show();
+                return true;
+            }
+            case R.id.add: {
                 Intent intent = new Intent(context, AllAppsActivity.class);
                 startActivityForResult(intent, PICK_NEW_APP);
                 return true;
-            case R.id.delete:
+            }
+            case R.id.delete: {
                 AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
                 alertDialog.setTitle("Delete");
                 alertDialog.setMessage("Are you sure you want to delete this selection?");
@@ -118,19 +165,11 @@ public class MainActivity extends ActionBarActivity {
                                 appColorMaps = readFromFile();
                                 listAdapter.swapItems(appColorMaps);
 
-                                //nReceiver.stopSelf();
-                                //nReceiver = new NotificationReceiver();
-                                //nReceiver.updateList(appColorMaps);
-                                //Intent intent = new Intent(context, NotificationReceiver.class);
-                                //stopService(intent);
-                                //startService(intent);
-                                stopService(new Intent(NotificationReceiver.NOTIFICATION_SERVICE));
-                                startService(new Intent(NotificationReceiver.NOTIFICATION_SERVICE));
-
                                 selectedListItem.setBackgroundResource(R.color.list_background);
                                 selectedListItem = null;
 
                                 showOption(R.id.add);
+                                showOption(R.id.connection);
                                 hideOption(R.id.delete);
                                 hideOption(R.id.changeColor);
 
@@ -148,18 +187,14 @@ public class MainActivity extends ActionBarActivity {
                 alertDialog.show();
 
                 return true;
-            case R.id.changeColor:
+            }
+            case R.id.changeColor: {
                 ColorPickerDialog colorPickerDialog = new ColorPickerDialog(this, 0, new ColorPickerDialog.OnColorSelectedListener() {
 
                     @Override
                     public void onColorSelected(int color) {
                         appColorMaps.get(selectedIndex).setHexColor(color);
                         writeToFile(appColorMaps);
-
-                        //nReceiver.updateList(appColorMaps);
-                        Intent intent = new Intent(context, NotificationReceiver.class);
-                        stopService(intent);
-                        startService(intent);
 
                         appColorMaps = readFromFile();
                         listAdapter.swapItems(appColorMaps);
@@ -168,6 +203,7 @@ public class MainActivity extends ActionBarActivity {
                 });
                 colorPickerDialog.show();
                 return true;
+            }
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -185,14 +221,6 @@ public class MainActivity extends ActionBarActivity {
                         appendToFile(data.getStringExtra(Constants.PACKAGE_NAME) + "," + color);
                         appColorMaps = readFromFile();
                         listAdapter.swapItems(appColorMaps);
-
-                        Intent intent = new Intent(context, NotificationReceiver.class);
-                        stopService(intent);
-                        startService(intent);
-
-                        //nReceiver.stopSelf();
-                        //nReceiver = new NotificationReceiver();
-                       //nReceiver.updateList(appColorMaps);
                     }
 
                 });

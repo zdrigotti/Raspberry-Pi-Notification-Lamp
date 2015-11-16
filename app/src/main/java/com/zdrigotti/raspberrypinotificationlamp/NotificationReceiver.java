@@ -1,8 +1,13 @@
 package com.zdrigotti.raspberrypinotificationlamp;
 
+import android.app.DownloadManager;
+import android.content.SharedPreferences;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -14,14 +19,13 @@ import java.util.List;
 
 public class NotificationReceiver extends NotificationListenerService {
 
-    private static final String TAG = "NotificationReceiver";
-    private List<AppColorMap> selectedMaps;
+    private SharedPreferences settings;
 
+    private static final String TAG = "NotificationReceiver";
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.i(TAG, "onCreate");
-        selectedMaps = readFromFile();
+        settings = getSharedPreferences(Constants.SHARED_PREFERENCES, MODE_PRIVATE);
     }
 
     @Override
@@ -33,77 +37,29 @@ public class NotificationReceiver extends NotificationListenerService {
     public void onNotificationPosted(StatusBarNotification sbn) {
         Log.i(TAG, "onNotificationPosted Package: " + sbn.getPackageName() + " Time: " + sbn.getPostTime());
 
+        List<AppColorMap> selectedMaps = readFromFile();
+
         //Reset the list of notifications
         StatusBarNotification[] activeNotifications = getActiveNotifications();
-
-        String found = "";
+        //Post Data
+        List<NameValuePair> nameValuePair = new ArrayList<>();
 
         for (StatusBarNotification notification : activeNotifications) {
             for (AppColorMap appColorMap : selectedMaps) {
                 if (notification.getPackageName().equals(appColorMap.getPackageName())) {
-                    found += appColorMap.getPackageName() + "," + appColorMap.getHexColor() + "\n";
+                    nameValuePair.add(new BasicNameValuePair(appColorMap.getPackageName(), Integer.toString(appColorMap.getHexColor())));
                 }
             }
         }
 
-        Log.i(TAG, "Found: " + found);
+        String serverIP = settings.getString(Constants.SERVER_IP, "");
 
-        /*//Iterate over all notifications
-        for (int i = 0; i < activeNotifications.length; i++) {
-            boolean found = false;
-            //Iterate over stored notifications
-            for (int j = 0; j < notifications.size(); j++) {
-                //Set the boolean if we found the notification in both
-                if (activeNotifications[i].getPackageName().equals(notifications.get(j).getPackageName())) {
-                    found = true;
-                }
-            }
-            //Add the new notification to the stored notification list
-            if (!found) {
-                notifications.add(new CustomNotification(activeNotifications[i]));
-            }
+        if (serverIP.equals("")) {
+            Log.i(TAG, "No server IP configured");
         }
-
-        //Loop through the notifications looking for those we care about
-        for (int i = 0; i < notifications.size(); i++) {
-            if (!notifications.get(i).getSent()) {
-                Log.i(TAG, notifications.get(i).getPackageName() + " " + notifications.get(i).getPostTime() + " " + notifications.get(i).getSent());
-                if (notifications.get(i).getPackageName().contains("textra")) { //Check for incoming text messages
-                    //TODO Send Textra signal to Pi server
-                    Log.i(TAG, "Textra sent");
-                    notifications.get(i).setSent(true);
-                }
-                else if (notifications.get(i).getPackageName().contains("facebook.katana")) { //Check for incoming Facebook notifications
-                    //TODO Send Facebook signal to Pi server
-                    Log.i(TAG, "Facebook notification sent");
-                    notifications.get(i).setSent(true);
-                }
-                else if (notifications.get(i).getPackageName().contains("facebook.orca")) { //Check for incoming Facebook messages
-                    //TODO Send Facebook Messenger signal to Pi server
-                    Log.i(TAG, "Facebook message sent");
-                    notifications.get(i).setSent(true);
-                }
-                else if (notifications.get(i).getPackageName().contains("snapchat")) { //Check for incoming Snapchats
-                    //TODO Send Snapchat signal to Pi server
-                    Log.i(TAG, "snapchat sent");
-                    notifications.get(i).setSent(true);
-                }
-                else if (notifications.get(i).getPackageName().contains("cloudmagic")) { //Check for incoming Emails
-                    //TODO Send Email signal to Pi server
-                    Log.i(TAG, "cloudmagic sent");
-                    notifications.get(i).setSent(true);
-                }
-                else if (notifications.get(i).getPackageName().contains("preguntados")) { //Check for incoming Trivia Crack
-                    //TODO Send Trivia Crack signal to Pi server
-                    Log.i(TAG, "Trivia Crack sent");
-                    notifications.get(i).setSent(true);
-                }
-                else {
-                    //Set the notification we don't care about as sent to avoid checking it each time there's a new notification
-                    notifications.get(i).setSent(true);
-                }
-            }
-        }*/
+        else {
+            new RequestTask().execute(nameValuePair);
+        }
     }
 
     @Override
@@ -145,10 +101,6 @@ public class NotificationReceiver extends NotificationListenerService {
         }*/
     }
 
-    public void updateList(List<AppColorMap> appColorMaps) {
-        selectedMaps = appColorMaps;
-    }
-
     private List<AppColorMap> readFromFile() {
         List<AppColorMap> appColorMap = new ArrayList<>();
 
@@ -169,12 +121,14 @@ public class NotificationReceiver extends NotificationListenerService {
             }
         }
         catch (FileNotFoundException e) {
-            Log.e("login activity", "File not found: " + e.toString());
+            Log.e("NotificationReceiver", "File not found: " + e.toString());
         }
         catch (IOException e) {
-            Log.e("login activity", "Can not read file: " + e.toString());
+            Log.e("NotificationReceiver", "Can not read file: " + e.toString());
         }
 
         return appColorMap;
     }
+
+
 }
