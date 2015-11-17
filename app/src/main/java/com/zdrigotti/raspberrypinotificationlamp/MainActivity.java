@@ -29,7 +29,7 @@ public class MainActivity extends ActionBarActivity {
 
     static final int PICK_NEW_APP = 1;
     private NotificationReceiver nReceiver;
-    public static Context context;
+    private Context context;
     private AppColorAdapter listAdapter = null;
     private ListView listView;
     private List<AppColorMap> appColorMaps;
@@ -114,16 +114,23 @@ public class MainActivity extends ActionBarActivity {
             case R.id.connection: {
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                 LayoutInflater inflater = MainActivity.this.getLayoutInflater();
-                final View dialogView = inflater.inflate(R.layout.set_server_ip_dialog, null);
+                final View dialogView = inflater.inflate(R.layout.set_server_details_dialog, null);
 
-                builder.setTitle("Set Server IP");
+                builder.setTitle("Set Server Details");
                 EditText serverIPEditText = (EditText) dialogView.findViewById(R.id.serverIP);
+                EditText serverPortEditText = (EditText) dialogView.findViewById(R.id.serverPort);
 
                 String currentIP = settings.getString(Constants.SERVER_IP, "");
+                String currentPort = settings.getString(Constants.SERVER_PORT, "");
 
                 if (!currentIP.equals("")) {
                     serverIPEditText.setText(currentIP);
                 }
+
+                if (!currentPort.equals("")) {
+                    serverPortEditText.setText(currentPort);
+                }
+
 
                 builder.setView(dialogView)
                         // Add action buttons
@@ -131,9 +138,11 @@ public class MainActivity extends ActionBarActivity {
                             @Override
                             public void onClick(DialogInterface dialog, int id) {
                                 EditText serverIPEditText = (EditText) dialogView.findViewById(R.id.serverIP);
+                                EditText serverPortEditText = (EditText) dialogView.findViewById(R.id.serverPort);
 
                                 SharedPreferences.Editor editor = settings.edit();
                                 editor.putString(Constants.SERVER_IP, serverIPEditText.getText().toString());
+                                editor.putString(Constants.SERVER_PORT, serverPortEditText.getText().toString());
                                 editor.commit();
 
                                 dialog.dismiss();
@@ -312,6 +321,10 @@ public class MainActivity extends ActionBarActivity {
         }
 
         return appColorMap;
+    }
+
+    public Context getContext() {
+        return context;
     }
 
     @Override

@@ -1,7 +1,5 @@
 package com.zdrigotti.raspberrypinotificationlamp;
 
-import java.util.List;
-
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -12,6 +10,8 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import java.util.List;
 
 public class AppColorAdapter extends ArrayAdapter<AppColorMap> {
     private List<AppColorMap> appsList = null;
@@ -57,7 +57,7 @@ public class AppColorAdapter extends ArrayAdapter<AppColorMap> {
         if (null != appColorMap) {
             //Use package name to get icon and name
             try {
-                ApplicationInfo app = MainActivity.context.getPackageManager().getApplicationInfo(appColorMap.getPackageName(), 0);
+                ApplicationInfo app = getContext().getPackageManager().getApplicationInfo(appColorMap.getPackageName(), 0);
 
                 TextView appName = (TextView) view.findViewById(R.id.app_name);
                 TextView hexColor = (TextView) view.findViewById(R.id.hex_color);

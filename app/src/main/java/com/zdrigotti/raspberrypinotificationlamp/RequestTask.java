@@ -1,6 +1,7 @@
 package com.zdrigotti.raspberrypinotificationlamp;
 
 import android.os.AsyncTask;
+import android.util.Log;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -8,25 +9,37 @@ import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
-class RequestTask extends AsyncTask<List, Void, String> {
+public class RequestTask extends AsyncTask<String, Void, String> {
+
+    private List<NameValuePair> data;
+    private String url;
+
+    public RequestTask(List<NameValuePair> data, String url) {
+        this.data = data;
+        this.url = url;
+    }
 
     @Override
-    protected String doInBackground(List... params) {
+    protected String doInBackground(String... params) {
         HttpClient httpclient = new DefaultHttpClient();
         HttpResponse response;
         String responseString = null;
 
         try {
-            response = httpclient.execute(new HttpPost());
+            HttpPost request = new HttpPost(url);
+
+            request.setEntity(new UrlEncodedFormEntity(data));
+
+            response = httpclient.execute(request);
+
             StatusLine statusLine = response.getStatusLine();
             if(statusLine.getStatusCode() == HttpStatus.SC_OK){
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -52,6 +65,7 @@ class RequestTask extends AsyncTask<List, Void, String> {
     @Override
     protected void onPostExecute(String result) {
         super.onPostExecute(result);
+        Log.i("RequestTask", result);
         //Do anything with response..
     }
 }
