@@ -5,24 +5,22 @@ import android.util.Log;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.List;
 
 public class RequestTask extends AsyncTask<String, Void, String> {
 
-    private List<NameValuePair> data;
+    private String data;
     private String url;
 
-    public RequestTask(List<NameValuePair> data, String url) {
+    public RequestTask(String data, String url) {
         this.data = data;
         this.url = url;
     }
@@ -36,7 +34,7 @@ public class RequestTask extends AsyncTask<String, Void, String> {
         try {
             HttpPost request = new HttpPost(url);
 
-            request.setEntity(new UrlEncodedFormEntity(data));
+            request.setEntity(new StringEntity(data));
 
             response = httpclient.execute(request);
 
@@ -54,10 +52,10 @@ public class RequestTask extends AsyncTask<String, Void, String> {
             }
         }
         catch (ClientProtocolException e) {
-            //TODO Handle problems..
+            Log.i("RequestTask", "ClientProtocolException");
         }
         catch (IOException e) {
-            //TODO Handle problems..
+            Log.i("RequestTask", "IOException");
         }
         return responseString;
     }
@@ -65,7 +63,11 @@ public class RequestTask extends AsyncTask<String, Void, String> {
     @Override
     protected void onPostExecute(String result) {
         super.onPostExecute(result);
-        Log.i("RequestTask", result);
-        //Do anything with response..
+        if (result != null) {
+            Log.i("RequestTask", result);
+        }
+        else {
+            Log.i("RequestTask", "Null result");
+        }
     }
 }

@@ -5,9 +5,6 @@ import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.message.BasicNameValuePair;
-
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -41,12 +38,12 @@ public class NotificationReceiver extends NotificationListenerService {
         //Reset the list of notifications
         StatusBarNotification[] activeNotifications = getActiveNotifications();
         //Post Data
-        List<NameValuePair> nameValuePair = new ArrayList<>();
+        ArrayList<String> values = new ArrayList<>();
 
         for (StatusBarNotification notification : activeNotifications) {
             for (AppColorMap appColorMap : selectedMaps) {
                 if (notification.getPackageName().equals(appColorMap.getPackageName())) {
-                    nameValuePair.add(new BasicNameValuePair(appColorMap.getPackageName(), Integer.toString(appColorMap.getHexColor())));
+                    values.add(Integer.toHexString(appColorMap.getHexColor()).substring(2));
                 }
             }
         }
@@ -58,7 +55,21 @@ public class NotificationReceiver extends NotificationListenerService {
             Log.i(TAG, "No server IP configured");
         }
         else {
-            new RequestTask(nameValuePair, "http://" + serverIP + ":" + serverPort).execute();
+            if (values.size() > 0) {
+                String data = "[";
+                for (String value : values) {
+                    if (data.length() != 1) {
+                        data = data + ",'" + value + "'";
+                    }
+                    else {
+                        data = data + "'" + value + "'";
+                    }
+                }
+
+                data = data + "]";
+
+                new RequestTask(data, "http://" + serverIP + ":" + serverPort).execute();
+            }
         }
     }
 
@@ -71,12 +82,12 @@ public class NotificationReceiver extends NotificationListenerService {
         //Reset the list of notifications
         StatusBarNotification[] activeNotifications = getActiveNotifications();
         //Post Data
-        List<NameValuePair> nameValuePair = new ArrayList<>();
+        ArrayList<String> values = new ArrayList<>();
 
         for (StatusBarNotification notification : activeNotifications) {
             for (AppColorMap appColorMap : selectedMaps) {
                 if (notification.getPackageName().equals(appColorMap.getPackageName())) {
-                    nameValuePair.add(new BasicNameValuePair(appColorMap.getPackageName(), Integer.toString(appColorMap.getHexColor())));
+                    values.add(Integer.toHexString(appColorMap.getHexColor()).substring(2));
                 }
             }
         }
@@ -88,7 +99,24 @@ public class NotificationReceiver extends NotificationListenerService {
             Log.i(TAG, "No server IP configured");
         }
         else {
-            new RequestTask(nameValuePair, "http://" + serverIP + ":" + serverPort).execute();
+            if (values.size() > 0) {
+                String data = "[";
+                for (String value : values) {
+                    if (data.length() != 1) {
+                        data = data + ",'" + value + "'";
+                    }
+                    else {
+                        data = data + "'" + value + "'";
+                    }
+                }
+
+                data = data + "]";
+
+                new RequestTask(data, "http://" + serverIP + ":" + serverPort).execute();
+            }
+            else {
+                new RequestTask("['FFFFFF']", "http://" + serverIP + ":" + serverPort).execute();
+            }
         }
     }
 

@@ -75,10 +75,13 @@ public class MainActivity extends ActionBarActivity {
                     showOption(R.id.changeColor);
                 }
                 else {
+                    selectedListItem.setBackgroundResource(R.color.list_background);
                     showOption(R.id.add);
                     showOption(R.id.connection);
                     hideOption(R.id.delete);
                     hideOption(R.id.changeColor);
+
+                    selectedListItem = null;
                 }
             }
         });
@@ -86,8 +89,6 @@ public class MainActivity extends ActionBarActivity {
         listView.setAdapter(listAdapter);
 
         SharedPreferences settings = getSharedPreferences(Constants.SHARED_PREFERENCES, MODE_PRIVATE);
-
-        //String serverIP = settings.getString(Constants.SERVER_IP, "");
     }
 
     @Override
@@ -198,7 +199,7 @@ public class MainActivity extends ActionBarActivity {
                 return true;
             }
             case R.id.changeColor: {
-                ColorPickerDialog colorPickerDialog = new ColorPickerDialog(this, 0, new ColorPickerDialog.OnColorSelectedListener() {
+                ColorPickerDialog colorPickerDialog = new ColorPickerDialog(this, appColorMaps.get(selectedIndex).getHexColor(), new ColorPickerDialog.OnColorSelectedListener() {
 
                     @Override
                     public void onColorSelected(int color) {
@@ -321,10 +322,6 @@ public class MainActivity extends ActionBarActivity {
         }
 
         return appColorMap;
-    }
-
-    public Context getContext() {
-        return context;
     }
 
     @Override
