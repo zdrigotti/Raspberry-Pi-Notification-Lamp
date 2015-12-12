@@ -32,12 +32,12 @@ public class RequestTask extends AsyncTask<String, Void, String> {
         String responseString = null;
 
         try {
+            // Construct the request and send it
             HttpPost request = new HttpPost(url);
-
             request.setEntity(new StringEntity(data));
-
             response = httpclient.execute(request);
 
+            // Read in the response if it's OK
             StatusLine statusLine = response.getStatusLine();
             if(statusLine.getStatusCode() == HttpStatus.SC_OK){
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -46,7 +46,7 @@ public class RequestTask extends AsyncTask<String, Void, String> {
                 out.close();
             }
             else {
-                //Closes the connection.
+                // Close the connection
                 response.getEntity().getContent().close();
                 throw new IOException(statusLine.getReasonPhrase());
             }

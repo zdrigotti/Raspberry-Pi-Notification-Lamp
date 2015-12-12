@@ -33,21 +33,24 @@ public class NotificationReceiver extends NotificationListenerService {
     public void onNotificationPosted(StatusBarNotification sbn) {
         Log.i(TAG, "onNotificationPosted Package: " + sbn.getPackageName() + " Time: " + sbn.getPostTime());
 
+        // Read the mappings from file
         List<AppColorMap> selectedMaps = readFromFile();
 
         //Reset the list of notifications
         StatusBarNotification[] activeNotifications = getActiveNotifications();
-        //Post Data
         ArrayList<String> values = new ArrayList<>();
 
+        // Loop over all notifications and then only the ones in the mapping
         for (StatusBarNotification notification : activeNotifications) {
             for (AppColorMap appColorMap : selectedMaps) {
+                // If there's a match, add the mapping to the list
                 if (notification.getPackageName().equals(appColorMap.getPackageName())) {
                     values.add(Integer.toHexString(appColorMap.getHexColor()).substring(2));
                 }
             }
         }
 
+        // Get the server IP Address and Port
         String serverIP = settings.getString(Constants.SERVER_IP, "");
         String serverPort = settings.getString(Constants.SERVER_PORT, "");
 
@@ -57,6 +60,8 @@ public class NotificationReceiver extends NotificationListenerService {
         else {
             if (values.size() > 0) {
                 String data = "[";
+
+                // Loop over each valid notification, creating a structured string
                 for (String value : values) {
                     if (data.length() != 1) {
                         data = data + ",'" + value + "'";
@@ -68,6 +73,7 @@ public class NotificationReceiver extends NotificationListenerService {
 
                 data = data + "]";
 
+                // Post the data to the server
                 new RequestTask(data, "http://" + serverIP + ":" + serverPort).execute();
             }
         }
@@ -81,9 +87,9 @@ public class NotificationReceiver extends NotificationListenerService {
 
         //Reset the list of notifications
         StatusBarNotification[] activeNotifications = getActiveNotifications();
-        //Post Data
         ArrayList<String> values = new ArrayList<>();
 
+        // Loop over all notifications and then only the ones in the mapping
         for (StatusBarNotification notification : activeNotifications) {
             for (AppColorMap appColorMap : selectedMaps) {
                 if (notification.getPackageName().equals(appColorMap.getPackageName())) {
@@ -92,6 +98,7 @@ public class NotificationReceiver extends NotificationListenerService {
             }
         }
 
+        // Get the server IP Address and Port
         String serverIP = settings.getString(Constants.SERVER_IP, "");
         String serverPort = settings.getString(Constants.SERVER_PORT, "");
 
@@ -101,6 +108,8 @@ public class NotificationReceiver extends NotificationListenerService {
         else {
             if (values.size() > 0) {
                 String data = "[";
+
+                // Loop over each valid notification, creating a structured string
                 for (String value : values) {
                     if (data.length() != 1) {
                         data = data + ",'" + value + "'";
@@ -112,6 +121,7 @@ public class NotificationReceiver extends NotificationListenerService {
 
                 data = data + "]";
 
+                // Post the data to the server
                 new RequestTask(data, "http://" + serverIP + ":" + serverPort).execute();
             }
             else {
@@ -120,10 +130,12 @@ public class NotificationReceiver extends NotificationListenerService {
         }
     }
 
+    // Reads all mappings from file
     private List<AppColorMap> readFromFile() {
         List<AppColorMap> appColorMap = new ArrayList<>();
 
         try {
+            // Open a handle to the file
             InputStream inputStream = openFileInput(Constants.APP_MAP_FILE);
 
             if (inputStream != null) {
@@ -131,6 +143,7 @@ public class NotificationReceiver extends NotificationListenerService {
                 BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
                 String receiveString = "";
 
+                // Loop over each entry and create a mapping list
                 while ((receiveString = bufferedReader.readLine()) != null) {
                     String[] fields = receiveString.split(",");
                     appColorMap.add(new AppColorMap(fields[0], Integer.parseInt(fields[1])));

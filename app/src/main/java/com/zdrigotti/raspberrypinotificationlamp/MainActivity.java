@@ -42,21 +42,27 @@ public class MainActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        // Create a new Notification Receiver
         nReceiver = new NotificationReceiver();
 
+        // Define the context and get access to Shared Preferences
         context = this;
         settings = getSharedPreferences(Constants.SHARED_PREFERENCES, MODE_PRIVATE);
 
+        // Set the title bar
         setTitle(R.string.menu_title);
 
+        // Read in the app configurations from file and create a new list adapter and view with them
         appColorMaps = readFromFile();
         listAdapter = new AppColorAdapter(MainActivity.this, R.layout.app_color_map_row, appColorMaps);
         listView = (ListView)findViewById(R.id.app_color_list);
 
+        // OnClickListener for the list view items
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                // When unselected, change the background back to normal and set the according icons
                 if (selectedListItem != null) {
                     selectedListItem.setBackgroundResource(R.color.list_background);
                     showOption(R.id.add);
@@ -66,6 +72,7 @@ public class MainActivity extends ActionBarActivity {
                 }
 
                 if (selectedListItem != view) {
+                    // When selected, change the background to selected and set the according icons
                     view.setBackgroundResource(R.color.list_background_pressed);
                     selectedListItem = view;
                     selectedIndex = position;
@@ -75,6 +82,7 @@ public class MainActivity extends ActionBarActivity {
                     showOption(R.id.changeColor);
                 }
                 else {
+                    // When unselected, change the background back to normal and set the according icons
                     selectedListItem.setBackgroundResource(R.color.list_background);
                     showOption(R.id.add);
                     showOption(R.id.connection);
@@ -87,8 +95,6 @@ public class MainActivity extends ActionBarActivity {
         });
 
         listView.setAdapter(listAdapter);
-
-        SharedPreferences settings = getSharedPreferences(Constants.SHARED_PREFERENCES, MODE_PRIVATE);
     }
 
     @Override
@@ -98,11 +104,13 @@ public class MainActivity extends ActionBarActivity {
         return true;
     }
 
+    // Used to hide an item in the action bar
     private void hideOption(int id) {
         MenuItem item = menu.findItem(id);
         item.setVisible(false);
     }
 
+    // Used to show an item in the action bar
     private void showOption(int id) {
         MenuItem item = menu.findItem(id);
         item.setVisible(true);
@@ -113,34 +121,36 @@ public class MainActivity extends ActionBarActivity {
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.connection: {
+                // Create a new dialog for specifying the IP Address and Port
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                 LayoutInflater inflater = MainActivity.this.getLayoutInflater();
                 final View dialogView = inflater.inflate(R.layout.set_server_details_dialog, null);
 
-                builder.setTitle("Set Server Details");
+                builder.setTitle(R.string.server_dialog_title);
                 EditText serverIPEditText = (EditText) dialogView.findViewById(R.id.serverIP);
                 EditText serverPortEditText = (EditText) dialogView.findViewById(R.id.serverPort);
 
+                // Get IP Address and Port from preferences
                 String currentIP = settings.getString(Constants.SERVER_IP, "");
                 String currentPort = settings.getString(Constants.SERVER_PORT, "");
 
+                // Set edit texts if IP Address or Port are specified
                 if (!currentIP.equals("")) {
                     serverIPEditText.setText(currentIP);
                 }
-
                 if (!currentPort.equals("")) {
                     serverPortEditText.setText(currentPort);
                 }
 
-
                 builder.setView(dialogView)
                         // Add action buttons
-                        .setPositiveButton("Submit", new DialogInterface.OnClickListener() {
+                        .setPositiveButton(R.string.submit, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int id) {
                                 EditText serverIPEditText = (EditText) dialogView.findViewById(R.id.serverIP);
                                 EditText serverPortEditText = (EditText) dialogView.findViewById(R.id.serverPort);
 
+                                // Commit the specified IP Address and Port to Shared Preferences
                                 SharedPreferences.Editor editor = settings.edit();
                                 editor.putString(Constants.SERVER_IP, serverIPEditText.getText().toString());
                                 editor.putString(Constants.SERVER_PORT, serverPortEditText.getText().toString());
@@ -149,7 +159,7 @@ public class MainActivity extends ActionBarActivity {
                                 dialog.dismiss();
                             }
                         })
-                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                                 dialog.dismiss();
                             }
@@ -159,25 +169,32 @@ public class MainActivity extends ActionBarActivity {
                 return true;
             }
             case R.id.add: {
+                // Start a new activity to get which app to add
                 Intent intent = new Intent(context, AllAppsActivity.class);
                 startActivityForResult(intent, PICK_NEW_APP);
                 return true;
             }
             case R.id.delete: {
+                // Create a new dialog for deleting a mapping
                 AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-                alertDialog.setTitle("Delete");
-                alertDialog.setMessage("Are you sure you want to delete this selection?");
-                alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Yes",
+                alertDialog.setTitle(R.string.delete);
+                alertDialog.setMessage(getString(R.string.delete_confirmation));
+                alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.yes),
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
+                                // Remove the mapping and rewrite the file
                                 appColorMaps.remove(selectedIndex);
                                 writeToFile(appColorMaps);
+
+                                // Replace the list adapter
                                 appColorMaps = readFromFile();
                                 listAdapter.swapItems(appColorMaps);
 
+                                // Reset the selected items
                                 selectedListItem.setBackgroundResource(R.color.list_background);
                                 selectedListItem = null;
 
+                                // Show initial state icons
                                 showOption(R.id.add);
                                 showOption(R.id.connection);
                                 hideOption(R.id.delete);
@@ -187,7 +204,7 @@ public class MainActivity extends ActionBarActivity {
                             }
                         });
 
-                alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "No",
+                alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.no),
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
                                 dialog.dismiss();
@@ -199,13 +216,16 @@ public class MainActivity extends ActionBarActivity {
                 return true;
             }
             case R.id.changeColor: {
+                // Create a Color Picker Dialog to change the color
                 ColorPickerDialog colorPickerDialog = new ColorPickerDialog(this, appColorMaps.get(selectedIndex).getHexColor(), new ColorPickerDialog.OnColorSelectedListener() {
 
                     @Override
                     public void onColorSelected(int color) {
+                        // Write the new mapping to file
                         appColorMaps.get(selectedIndex).setHexColor(color);
                         writeToFile(appColorMaps);
 
+                        // Replace the list adapter
                         appColorMaps = readFromFile();
                         listAdapter.swapItems(appColorMaps);
                     }
@@ -224,10 +244,12 @@ public class MainActivity extends ActionBarActivity {
         if (requestCode == PICK_NEW_APP) {
             // Make sure the request was successful
             if (resultCode == RESULT_OK) {
+                // Create a new Color Picker Dialog to pick a color for the new app
                 ColorPickerDialog colorPickerDialog = new ColorPickerDialog(this, 0, new ColorPickerDialog.OnColorSelectedListener() {
 
                     @Override
                     public void onColorSelected(int color) {
+                        // Write the new mapping to file and replace the list adpater
                         appendToFile(data.getStringExtra(Constants.PACKAGE_NAME) + "," + color);
                         appColorMaps = readFromFile();
                         listAdapter.swapItems(appColorMaps);
@@ -239,10 +261,12 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    // Method for appending to the end of the existing file
     private void appendToFile(String data) {
         String contents = "";
 
         try {
+            // Get a file handle and open it
             InputStream inputStream = openFileInput(Constants.APP_MAP_FILE);
 
             if (inputStream != null) {
@@ -250,6 +274,7 @@ public class MainActivity extends ActionBarActivity {
                 BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
                 String receiveString = "";
 
+                // Read in the file line by line
                 while ((receiveString = bufferedReader.readLine()) != null) {
                     contents += receiveString + "\n";
                 }
@@ -265,6 +290,7 @@ public class MainActivity extends ActionBarActivity {
         }
 
         try {
+            // Add the new mapping to the contents and write it to file
             OutputStreamWriter outputStreamWriter = new OutputStreamWriter(openFileOutput(Constants.APP_MAP_FILE, Context.MODE_PRIVATE));
             outputStreamWriter.write(contents + data);
             outputStreamWriter.close();
@@ -274,18 +300,20 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    //Writes all mappings to file
     private void writeToFile(List<AppColorMap> appColorMaps) {
         String contents = "";
 
         try {
+            // Open a handle to the file
             OutputStreamWriter outputStreamWriter = new OutputStreamWriter(openFileOutput(Constants.APP_MAP_FILE, Context.MODE_PRIVATE));
 
+            // Loop over each mapping and create one string
             for (AppColorMap appColorMap : appColorMaps) {
                 contents += appColorMap.getPackageName() + "," + appColorMap.getHexColor() + "\n";
             }
 
-            Log.i("MainActivity", contents);
-
+            // Write the contents to file
             outputStreamWriter.write(contents);
             outputStreamWriter.close();
         }
@@ -295,10 +323,12 @@ public class MainActivity extends ActionBarActivity {
 
     }
 
+    // Reads mappings from file
     private List<AppColorMap> readFromFile() {
         List<AppColorMap> appColorMap = new ArrayList<>();
 
         try {
+            // Open a handle to the file
             InputStream inputStream = openFileInput(Constants.APP_MAP_FILE);
 
             if (inputStream != null) {
@@ -306,6 +336,7 @@ public class MainActivity extends ActionBarActivity {
                 BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
                 String receiveString = "";
 
+                // Loop over each line, parsing the info and creating a new color map
                 while ((receiveString = bufferedReader.readLine()) != null) {
                     String[] fields = receiveString.split(",");
                     appColorMap.add(new AppColorMap(fields[0], Integer.parseInt(fields[1])));
